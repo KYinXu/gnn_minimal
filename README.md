@@ -15,6 +15,13 @@ gnn_minimal/
 └── README.md
 ```
 
+## Setup
+
+```bash
+conda env create -f environment.yml
+conda activate gnn
+```
+
 ## Workflow
 
 Only `train.py` and `inference.py` are CLI entry-points. Both look for a sibling `generated/` folder next to the input CSV and run processing automatically when artifacts are missing.
