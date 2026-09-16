@@ -1,0 +1,7 @@
+name: gnn
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - cd-hit
+prefix: /home/bioin/miniconda3/envs/gnn

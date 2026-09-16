@@ -1,0 +1,31 @@
+{
+  "_documentation": "Defaults for gnn_minimal/train.py. node_feature_groups control per-residue inputs before message passing. feature_sets control optional Geo/QSAR inputs concatenated after graph pooling.",
+  "seed": 42,
+  "epochs": 300,
+  "batch_size": 32,
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "patience": 30,
+  "val_size": 0.2,
+  "hidden_channels": 64,
+  "esm2_hidden_dim": 64,
+  "num_layers": 3,
+  "dropout": 0.2,
+  "distance_threshold": 8.0,
+  "label_smoothing": 0.08,
+  "logit_penalty": 0.0001,
+  "node_feature_groups": {
+    "onehot": true,
+    "pdb_continuous": false,
+    "vae_table": true,
+    "esm2_residue": false
+  },
+  "architectures": ["gat"],
+  "feature_sets_default": ["Graph-only"],
+  "feature_sets": {
+    "Graph-only": {"use_geo": false, "use_qsar": false},
+    "Geo": {"use_geo": true, "use_qsar": false},
+    "QSAR": {"use_geo": false, "use_qsar": true},
+    "Combined": {"use_geo": true, "use_qsar": true}
+  }
+}

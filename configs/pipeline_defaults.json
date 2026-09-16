@@ -1,0 +1,3 @@
+{
+  "_documentation": "Optional defaults for scripts/run_data_pipeline.py. Repeat --config with later files overriding earlier; CLI overrides all files."
+}
