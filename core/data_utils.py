@@ -164,20 +164,47 @@ def node_feature_groups_for_base_dim(base_dim: int) -> NodeFeatureGroups:
     )
 
 
-def node_feature_groups_from_cli(spec: str) -> Optional[NodeFeatureGroups]:
-    """Parse comma-separated tokens: no_vae, no_onehot, no_pdb, no_esm2 / no_esm2_residue. Empty string -> None (all on)."""
+_CLI_NODE_FEATURE_ALIASES = {
+    "onehot": "onehot",
+    "pdb": "pdb_continuous",
+    "pdb_continuous": "pdb_continuous",
+    "vae": "vae_table",
+    "vae_table": "vae_table",
+    "esm2": "esm2_residue",
+    "esm2_residue": "esm2_residue",
+}
+
+
+def node_feature_groups_from_cli(spec: str) -> NodeFeatureGroups:
+    """
+    Parse comma-separated opt-in blocks.
+
+    Baseline is one-hot on and everything else off. Listed tokens enable extra
+    blocks: ``pdb_continuous`` / ``pdb``, ``vae_table`` / ``vae``,
+    ``esm2_residue`` / ``esm2``. ``onehot`` is accepted but redundant.
+    Empty / whitespace-only -> one-hot only.
+    """
+    g = NodeFeatureGroups(
+        onehot=True,
+        pdb_continuous=False,
+        vae_table=False,
+        esm2_residue=False,
+    )
     if not (spec or "").strip():
-        return None
-    tok = {t.strip().lower() for t in spec.split(",") if t.strip()}
-    g = NodeFeatureGroups()
-    if "no_vae" in tok or "no_vae_table" in tok:
-        g.vae_table = False
-    if "no_onehot" in tok:
-        g.onehot = False
-    if "no_pdb" in tok or "no_pdb_continuous" in tok:
-        g.pdb_continuous = False
-    if "no_esm2" in tok or "no_esm2_residue" in tok:
-        g.esm2_residue = False
+        return g
+    unknown: list[str] = []
+    for raw in spec.split(","):
+        token = raw.strip().lower()
+        if not token:
+            continue
+        key = _CLI_NODE_FEATURE_ALIASES.get(token)
+        if key is None:
+            unknown.append(raw.strip())
+            continue
+        setattr(g, key, True)
+    if unknown:
+        allowed = ", ".join(sorted(set(_CLI_NODE_FEATURE_ALIASES)))
+        raise ValueError(f"Unknown --node-features token(s) {unknown}; allowed: {allowed}")
     return g
 
 
@@ -186,7 +213,7 @@ def node_feature_groups_from_config_value(obj: object) -> Optional[NodeFeatureGr
     Build toggles from JSON (``configs/*.json`` ``node_feature_groups``) or a CLI-style string.
 
     - ``None`` / omitted: all groups on (same as ``NodeFeatureGroups()`` defaults).
-    - ``str``: same as :func:`node_feature_groups_from_cli`.
+    - ``str``: same as :func:`node_feature_groups_from_cli` (one-hot on; listed blocks enabled).
     - ``dict``: optional keys ``onehot``, ``pdb_continuous``, ``vae_table``, ``esm2_residue`` (booleans); absent keys stay at default True.
     """
     if obj is None:

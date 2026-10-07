@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from core.data_utils import (
     NodeFeatureGroups,
     load_esm2_per_residue_tensor,
+    node_feature_groups_from_cli,
     node_input_dim,
     resolve_peptide_pdb_path,
     wants_esm2_residue_nodes,
@@ -355,6 +356,16 @@ def main():
     parser.add_argument("--weight_decay", type=float, default=1e-4)
     parser.add_argument("--esm2_hidden_dim", type=int, default=64)
     parser.add_argument("--presets", nargs="+", default=None, help="Post-pooling tabular presets to train")
+    parser.add_argument(
+        "--node-features",
+        type=str,
+        default=None,
+        help=(
+            "Comma-separated node feature blocks to enable on top of one-hot "
+            "(pdb_continuous/pdb, vae_table/vae, esm2_residue/esm2). "
+            "Overrides config node_feature_groups when set."
+        ),
+    )
     parser.add_argument("--force-process", action="store_true", help="Regenerate processed features before training")
     parser.add_argument("--device", type=str, default=None, help="Device for on-demand processing (default: auto)")
     args = parser.parse_args()
@@ -374,7 +385,14 @@ def main():
         if not hasattr(args, k):
             setattr(args, k, v)
 
-    node_feature_groups = NodeFeatureGroups(**args.node_feature_groups)
+    if args.node_features is not None:
+        try:
+            node_feature_groups = node_feature_groups_from_cli(args.node_features)
+        except ValueError as exc:
+            print(f"Error: {exc}")
+            sys.exit(1)
+    else:
+        node_feature_groups = NodeFeatureGroups(**args.node_feature_groups)
     need_esm2 = wants_esm2_residue_nodes(node_feature_groups)
     process_device = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
 
